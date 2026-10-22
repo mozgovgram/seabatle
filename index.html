@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Морской Бой</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <audio id="snd-bg" src="sound/bg.mp3" loop></audio>
+    <audio id="snd-fire" src="sound/fire.mp3"></audio>
+    <audio id="snd-hit" src="sound/hit.mp3"></audio>
+    <audio id="snd-miss" src="sound/miss.mp3"></audio>
+
+    <div id="game-container">
+        <!-- Холст для игры -->
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Слой проливного дождя -->
+        <div id="rain-overlay"></div>
+
+        <!-- Виньетка перископа -->
+        <div id="vignette-overlay"></div>
+
+        <!-- Ржавая маска -->
+        <div id="dashboard-overlay"></div>
+
+        <!-- Слой интерфейса -->
+        <div id="ui-layer">
+            <div id="torpedo-container" class="counter-box">
+                <span id="torpedo-counter" class="nixie-text">10</span>
+            </div>
+            
+            <button id="fire-btn">ПУСК</button>
+            
+            <div id="score-container" class="counter-box">
+                <span id="score-counter" class="nixie-text">00</span>
+            </div>
+            
+            <div id="crosshair"></div>
+        </div>
+        
+        <!-- Эффект старого монитора -->
+        <div id="crt-overlay"></div>
+
+        <!-- Стартовый экран -->
+        <div id="start-screen" class="modal-screen">
+            <h1>МОРСКОЙ БОЙ</h1>
+            <button id="start-btn" class="retro-btn">ВСТАВИТЬ 15 КОП.</button>
+        </div>
+
+        <!-- Экран конца игры -->
+        <div id="game-over-screen" class="modal-screen" style="display: none;">
+            <h1>КОНЕЦ ИГРЫ</h1>
+            <p class="score-result">СБИТО КОРАБЛЕЙ: <span id="final-score-text">0</span></p>
+            <button id="pay-btn" class="retro-btn premium-btn">КУПИТЬ 10 ТОРПЕД (⭐️ 15)</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

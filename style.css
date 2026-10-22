@@ -1,0 +1,158 @@
+:root {
+    /* ========================================================= */
+    /* НАСТРОЙКИ ИНТЕРФЕЙСА */
+    /* ========================================================= */
+    --fire-btn-bottom: 4%;       
+    --fire-btn-size: 110px; 
+    
+    --counters-bottom: 4%;     
+    --counter-left-x: -4%;        
+    --counter-right-x: -4%;       
+    
+    --counter-width: 140px; 
+    --counter-height: 80px;      
+    /* ========================================================= */
+}
+
+* { 
+    margin: 0; padding: 0; box-sizing: border-box; 
+    user-select: none; -webkit-user-select: none; 
+    -webkit-tap-highlight-color: transparent; outline: none;
+}
+
+body {
+    background-color: #111; display: flex; justify-content: center;
+    align-items: center; height: 100vh; overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#game-container {
+    position: relative; background: #000; overflow: hidden;
+    aspect-ratio: 9 / 16; height: 100vh; max-width: 100vw;
+}
+
+canvas { 
+    display: block; width: 100%; height: 100%; 
+    z-index: 1; position: relative; 
+}
+
+#rain-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 2; pointer-events: none; opacity: 0.6;
+    background: repeating-linear-gradient(
+        15deg, transparent, transparent 10px, 
+        rgba(150, 200, 255, 0.15) 10px, rgba(150, 200, 255, 0.15) 12px
+    );
+    animation: rainStorm 0.3s linear infinite;
+}
+
+@keyframes rainStorm {
+    0% { background-position: 0 0; }
+    100% { background-position: -20px 100px; }
+}
+
+/* Виньетка (затемнение по краям линзы перископа) */
+#vignette-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 3; 
+    background: radial-gradient(circle at 50% 35%, transparent 20%, rgba(0, 0, 0, 0.8) 55%, #000 100%);
+}
+
+#ui-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; 
+}
+
+.counter-box {
+    position: absolute;
+    bottom: var(--counters-bottom);
+    width: var(--counter-width); 
+    height: var(--counter-height);
+    display: flex; justify-content: center; align-items: center;
+    background: #1a1a1a; box-shadow: inset 0 0 20px #000;
+    border-radius: 4px; z-index: 10; 
+}
+#torpedo-container { left: var(--counter-left-x); }
+#score-container { right: var(--counter-right-x); }
+
+.nixie-text { 
+    color: #ff4500; font-size: 50px; font-weight: bold; 
+    text-shadow: 0 0 10px #ff4500, 0 0 20px #ff0000; 
+    letter-spacing: 2px;
+}
+
+#dashboard-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('images/panel_frame.png'); 
+    background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+    pointer-events: none; z-index: 20; 
+}
+
+#fire-btn {
+    position: absolute;
+    bottom: var(--fire-btn-bottom);
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--fire-btn-size); height: var(--fire-btn-size);
+    background: radial-gradient(circle at 50% 20%, #ff5555 0%, #cc0000 60%, #660000 100%);
+    color: #111; font-weight: bold; font-size: 24px; 
+    border-radius: 50%; border: none; cursor: pointer; pointer-events: auto;
+    box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.4), inset 0 -10px 15px rgba(0, 0, 0, 0.6), 
+                0 6px 0 #440000, 0 10px 15px rgba(0,0,0,0.8);
+    transition: transform 0.1s, box-shadow 0.1s; z-index: 30; 
+}
+
+#fire-btn:active { 
+    transform: translateX(-50%) translateY(4px); 
+    box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.2), inset 0 -5px 10px rgba(0, 0, 0, 0.5), 
+                0 2px 0 #220000, 0 5px 20px 10px rgba(255, 40, 0, 0.8); 
+}
+
+#fire-btn:disabled { 
+    background: #444; color: #222; 
+    box-shadow: inset 0 6px 10px rgba(255, 255, 255, 0.1), 0 6px 0 #111; 
+}
+
+#crosshair {
+    position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    background: linear-gradient(to right, transparent 48%, rgba(255, 50, 50, 0.5) 48%, rgba(255, 50, 50, 0.5) 52%, transparent 52%),
+                linear-gradient(to bottom, transparent 48%, rgba(255, 50, 50, 0.5) 48%, rgba(255, 50, 50, 0.5) 52%, transparent 52%);
+    pointer-events: none; z-index: 30; 
+}
+
+#crt-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1) 1px, transparent 1px, transparent 2px);
+    pointer-events: none; opacity: 0.5; z-index: 40;
+}
+
+.modal-screen {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 15, 20, 0.95); z-index: 50;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+
+.modal-screen h1 { 
+    color: #ff4500; margin-bottom: 20px; font-size: 42px; 
+    text-shadow: 0 0 10px #ff0000; letter-spacing: 3px; text-align: center;
+}
+
+.score-result {
+    color: #887a55; font-size: 24px; font-weight: bold; margin-bottom: 40px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.retro-btn {
+    padding: 20px 40px; font-size: 20px; font-weight: bold; color: #000;
+    background: #887a55; border: 4px solid #554a33; border-radius: 10px;
+    cursor: pointer; font-family: 'Courier New', Courier, monospace;
+    transition: transform 0.1s, filter 0.1s; pointer-events: auto;
+}
+
+.retro-btn:active { transform: scale(0.95); }
+
+.premium-btn {
+    background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+    border-color: #b8860b; box-shadow: 0 5px 15px rgba(255, 165, 0, 0.5);
+}
