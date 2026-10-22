@@ -3,14 +3,14 @@
     /* НАСТРОЙКИ ИНТЕРФЕЙСА */
     /* ========================================================= */
     --fire-btn-bottom: 4%;       
-    --fire-btn-size: 110px; 
+    --fire-btn-size: 90px; 
     
-    --counters-bottom: 4%;     
+    --counters-bottom: -1%;     
     --counter-left-x: -4%;        
-    --counter-right-x: -4%;       
+    --counter-right-x: -6%;       
     
-    --counter-width: 140px; 
-    --counter-height: 80px;      
+    --counter-width: 160px; 
+    --counter-height: 140px;      
     /* ========================================================= */
 }
 
