@@ -4,34 +4,37 @@
 const CONFIG = {
     startTorpedoes: 10, 
     crosshairHitY: 0.38, 
-    directionRightChance: 0.5, // 0.5 = 50 на 50 плывут вправо/влево
     
-    // БАЗОВАЯ СКОРОСТЬ планов
-    speed: { 1: 0.5, 2: 1.2, 3: 2.5 },
+    // Оптимальная скорость для комфортной стрельбы
+    speed: { 1: 0.8, 2: 1.2, 3: 1.6 },
     
-    // ЧАСТОТА ПОЯВЛЕНИЯ (в миллисекундах)
+    // Пауза перед выходом следующего корабля, когда полоса освободилась
     spawnDelay: {
-        1: { min: 1000, max: 2500 }, 
-        2: { min: 2000, max: 4000 }, 
-        3: { min: 4000, max: 8000 }  
+        1: { min: 1000, max: 3000 }, 
+        2: { min: 1500, max: 4000 }, 
+        3: { min: 2000, max: 5000 }  
     },
 
-    // СПИСОК КОРАБЛЕЙ (Массивы для случайного выбора)
     fleet: {
-        // Дальний план (Мелкие)
+        // Дальняя полоса
         1: [
-            { id: 'ship_smallUSA', scale: 0.4, speedMod: 1.0 },
-            { id: 'ship_smallstels', scale: 0.4, speedMod: 1.3 } // Стелс плывет на 30% быстрее
+            { id: 'ship_small', scale: 0.8, speedMod: 1.2, yOffset: 0 },
+            { id: 'ship_smallstelsR', scale: 0.8, speedMod: 1.2, yOffset: 0 }
         ],
-        // Средний план
+        // Средняя полоса
         2: [
-            { id: 'ship_medium', scale: 0.7, speedMod: 1.0 },
-            { id: 'ship_mediumUSA', scale: 0.7, speedMod: 0.9 },
-            { id: 'ship_mediumstels', scale: 0.7, speedMod: 1.2 }
+            { id: 'ship_medium', scale: 1.2, speedMod: 1.0, yOffset: 15 },
+            { id: 'ship_mediumstels', scale: 1.2, speedMod: 1.1, yOffset: 15 },
+            { id: 'ship_mediumstelsR', scale: 1.2, speedMod: 1.1, yOffset: 15 },
+            { id: 'ship_mediumUSA', scale: 1.4, speedMod: 0.9, yOffset: 20 },
+            { id: 'ship_mediumUSAR', scale: 1.4, speedMod: 0.9, yOffset: 20 }
         ],
-        // Ближний план
+        // Ближняя полоса
         3: [
-            { id: 'ship_big', scale: 1.2, speedMod: 1.0 }
+            { id: 'ship_big', scale: 1.6, speedMod: 1.0, yOffset: 25 },
+            { id: 'ship_bigR', scale: 1.6, speedMod: 1.0, yOffset: 25 },
+            { id: 'ship_bigUSA', scale: 1.8, speedMod: 0.9, yOffset: 35 },
+            { id: 'ship_bigUSAR', scale: 1.8, speedMod: 0.9, yOffset: 35 }
         ]
     }
 };
@@ -59,6 +62,17 @@ if (sndHit) sndHit.volume = 1.0;
 if (sndMiss) sndMiss.volume = 0.7;
 
 let isGameStarted = false;
+// Состояние: храним ID последних кораблей для анти-повтора
+let state = { 
+    torpedoes: CONFIG.startTorpedoes, 
+    score: 0, 
+    isGameOver: false, 
+    cameraX: 0, 
+    horizonY: 0, 
+    lightning: 0, 
+    flashOpacity: 0,
+    lastShipId: { 1: null, 2: null, 3: null }
+};
 
 document.getElementById('start-btn').addEventListener('click', () => {
     startScreen.style.display = 'none';
@@ -79,11 +93,9 @@ let cw, ch;
 function resize() {
     cw = canvas.width = window.innerWidth > 600 ? 600 : window.innerWidth;
     ch = canvas.height = window.innerHeight;
-    if (state) state.horizonY = ch * 0.45; 
+    state.horizonY = ch * 0.45; 
 }
 window.addEventListener('resize', resize);
-
-let state = { torpedoes: CONFIG.startTorpedoes, score: 0, isGameOver: false, cameraX: 0, horizonY: 0, lightning: 0, flashOpacity: 0 };
 resize(); 
 
 const images = {};
@@ -92,54 +104,96 @@ function preloadImage(name, src) {
     images[name].src = src;
 }
 
-// Загрузка эффектов и фона
 preloadImage('bg', 'images/BG.png');
 preloadImage('fx_hit', 'images/Explosion_02.png');
 preloadImage('fx_miss', 'images/Water Splash.png');
 
-// АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ВСЕХ КОРАБЛЕЙ ИЗ CONFIG
 for (let depth in CONFIG.fleet) {
     CONFIG.fleet[depth].forEach(shipParams => {
         preloadImage(shipParams.id, `images/${shipParams.id}.png`);
-        preloadImage(shipParams.id + 'R', `images/${shipParams.id}R.png`); // Загружаем отзеркаленную версию
     });
 }
 
 let ships = [];
 
 function spawnShip(depthType) {
-    let yPos, baseSpeed;
+    let yBase, baseSpeed, bHeight;
     
     if (depthType === 1) { 
-        yPos = state.horizonY - 10; baseSpeed = CONFIG.speed[1];
+        yBase = state.horizonY + 15; 
+        baseSpeed = CONFIG.speed[1];
+        bHeight = 40; 
     } else if (depthType === 2) { 
-        yPos = state.horizonY + 30; baseSpeed = CONFIG.speed[2];
+        yBase = state.horizonY + 50; 
+        baseSpeed = CONFIG.speed[2];
+        bHeight = 70; 
     } else { 
-        yPos = state.horizonY + 80; baseSpeed = CONFIG.speed[3];
+        yBase = state.horizonY + 95; 
+        baseSpeed = CONFIG.speed[3];
+        bHeight = 110; 
     }
     
-    // Выбираем случайный корабль из списка доступных для этого плана
     let fleetOptions = CONFIG.fleet[depthType];
-    let chosenShip = fleetOptions[Math.floor(Math.random() * fleetOptions.length)];
     
-    let direction = Math.random() < CONFIG.directionRightChance ? 1 : -1;
-    let xPos = state.cameraX + (direction === 1 ? -800 : cw + 800);
+    // АНТИ-КСЕРОКС: Убираем из выбора тот корабль, который был на полосе только что
+    let availableShips = fleetOptions.filter(s => s.id !== state.lastShipId[depthType]);
+    if (availableShips.length === 0) availableShips = fleetOptions; // Защита, если в массиве всего 1 корабль
     
-    let imgLeft = images[chosenShip.id];
-    let imgRight = images[chosenShip.id + 'R'];
-    let activeImage = (direction === 1) ? imgRight : imgLeft;
+    let chosenShip = availableShips[Math.floor(Math.random() * availableShips.length)];
+    state.lastShipId[depthType] = chosenShip.id; // Запоминаем выбор
     
-    // Применяем индивидуальный множитель скорости корабля
+    let isRightFacing = chosenShip.id.endsWith('R');
+    let direction = isRightFacing ? 1 : -1; 
+    
+    // Спавним аккурат за краем экрана (а не за километры)
+    let xPos = state.cameraX + (direction === 1 ? -300 : cw + 300);
+    let activeImage = images[chosenShip.id];
+    
+    if (!activeImage || !activeImage.complete || activeImage.naturalWidth === 0) {
+        return; // Если картинки нет, менеджер полосы сам вызовет спавн снова
+    }
+
     let finalSpeed = baseSpeed * chosenShip.speedMod * direction;
+    let finalY = yBase + (chosenShip.yOffset || 0);
 
     ships.push({ 
-        x: xPos, y: yPos, baseHeight: 50, depth: depthType,
+        x: xPos, y: finalY, baseHeight: bHeight, depth: depthType,
         speed: finalSpeed, scale: chosenShip.scale, img: activeImage, 
         active: true, hitWidth: 100 
     });
 }
 
-spawnShip(1); spawnShip(2); spawnShip(3);
+// УМНЫЙ МЕНЕДЖЕР ПОЛОС: Строго 1 корабль на линию!
+function startLaneManager(depth) {
+    function checkAndSpawn() {
+        if (!isGameStarted || state.isGameOver) {
+            setTimeout(checkAndSpawn, 1000); 
+            return;
+        }
+        
+        // Считаем, сколько сейчас кораблей на этой глубине
+        let shipsOnLane = ships.filter(s => s.depth == depth && s.active);
+        
+        if (shipsOnLane.length === 0) {
+            // Полоса свободна! Ждем паузу и выпускаем новый корабль
+            let delay = Math.random() * (CONFIG.spawnDelay[depth].max - CONFIG.spawnDelay[depth].min) + CONFIG.spawnDelay[depth].min;
+            setTimeout(() => {
+                if (isGameStarted && !state.isGameOver) spawnShip(depth);
+                setTimeout(checkAndSpawn, 500); // Продолжаем следить за полосой
+            }, delay);
+        } else {
+            // Полоса занята. Проверим еще раз через полсекунды
+            setTimeout(checkAndSpawn, 500);
+        }
+    }
+    // Рассинхронизируем старт, чтобы они не выехали одновременно
+    setTimeout(checkAndSpawn, Math.random() * 2000 + (depth * 500));
+}
+
+// Запускаем контроль для каждой из 3 линий
+startLaneManager(1);
+startLaneManager(2);
+startLaneManager(3);
 
 let torpedo = null;
 let fxQueue = []; 
@@ -304,24 +358,23 @@ function gameLoop() {
         let s = ships[i];
         if (!s.active) continue;
         s.x += s.speed;
-        let screenX = s.x - state.cameraX;
+        let screenX = s.x - state.cameraX; // Положение относительно экрана (0 - это левый край)
         
-        // Отрисовка
         if (s.img && s.img.complete && s.img.naturalWidth > 0) {
             let ratio = s.img.naturalWidth / s.img.naturalHeight;
             let drawHeight = s.baseHeight * s.scale;
             let drawWidth = drawHeight * ratio;
             s.hitWidth = drawWidth; 
+            
             ctx.drawImage(s.img, screenX, s.y - drawHeight + bobbingY, drawWidth, drawHeight);
         }
         
-        if (s.x > state.cameraX + 2500 || s.x < state.cameraX - 2500) {
-            s.active = false;
-            let dType = s.depth;
-            let nextSpawnDelay = Math.random() * (CONFIG.spawnDelay[dType].max - CONFIG.spawnDelay[dType].min) + CONFIG.spawnDelay[dType].min;
-            setTimeout(() => spawnShip(dType), nextSpawnDelay);
-        }
+        // ТОЧНОЕ И БЫСТРОЕ УДАЛЕНИЕ: 
+        // Удаляем корабль, как только он отплыл на 300px от края экрана
+        if (s.speed > 0 && screenX > cw + 300) s.active = false;
+        if (s.speed < 0 && screenX < -300 - s.hitWidth) s.active = false;
     }
+    
     ships = ships.filter(s => s.active);
 
     if (torpedo) {
@@ -387,9 +440,7 @@ function checkHit() {
             document.getElementById('game-container').style.transform = 'translate(5px, 5px)';
             setTimeout(() => document.getElementById('game-container').style.transform = 'none', 50);
             
-            s.active = false;
-            let dType = s.depth;
-            setTimeout(() => spawnShip(dType), 1000); 
+            s.active = false; // При попадании корабль тут же удаляется, полоса освобождается
             hit = true; break;
         }
     }

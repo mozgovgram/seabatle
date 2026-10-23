@@ -13,19 +13,12 @@
     <audio id="snd-miss" src="sound/miss.mp3"></audio>
 
     <div id="game-container">
-        <!-- Холст для игры -->
         <canvas id="gameCanvas"></canvas>
         
-        <!-- Слой проливного дождя -->
         <div id="rain-overlay"></div>
-
-        <!-- Виньетка перископа -->
         <div id="vignette-overlay"></div>
-
-        <!-- Ржавая маска -->
         <div id="dashboard-overlay"></div>
 
-        <!-- Слой интерфейса -->
         <div id="ui-layer">
             <div id="torpedo-container" class="counter-box">
                 <span id="torpedo-counter" class="nixie-text">10</span>
@@ -40,16 +33,13 @@
             <div id="crosshair"></div>
         </div>
         
-        <!-- Эффект старого монитора -->
         <div id="crt-overlay"></div>
 
-        <!-- Стартовый экран -->
         <div id="start-screen" class="modal-screen">
             <h1>МОРСКОЙ БОЙ</h1>
             <button id="start-btn" class="retro-btn">ВСТАВИТЬ 15 КОП.</button>
         </div>
 
-        <!-- Экран конца игры -->
         <div id="game-over-screen" class="modal-screen" style="display: none;">
             <h1>КОНЕЦ ИГРЫ</h1>
             <p class="score-result">СБИТО КОРАБЛЕЙ: <span id="final-score-text">0</span></p>
